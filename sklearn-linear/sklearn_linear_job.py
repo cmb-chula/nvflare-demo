@@ -25,8 +25,8 @@ if __name__ == "__main__":
     n_clients = 4 ## ADJUST NUMBER OF CLIENT TO MATCH THE DATASET
     num_rounds = 10 ## ADJUST NUMBER OF TRAINING ROUNDS
     train_script = "nvflare-demo/sklearn-linear/sgd_fl.py"
-    output_folder = "nvflare-demo/sklearn-linear/output" ## OUTPUT LOCATION
-    script_args = "--data_root_dir nvflare_demo/crc-data" ## PATH TO DATA FOLDER
+    workspace = "nvflare-demo/sklearn-linear/output" ## OUTPUT LOCATION
+    script_args = "--data_root_dir /content/nvflare-demo/crc-data" ## PATH TO DATA FOLDER
 
     aggregator_id = "aggregator"
     persistor_id = "persistor"
@@ -35,7 +35,8 @@ if __name__ == "__main__":
     job = FedJob("sklearn_sgd")
 
     initial_params = dict(
-        n_classes=2, learning_rate="constant", eta0=5e-07, loss="log_loss", penalty="l2", fit_intercept=True, max_iter=1
+        n_classes=2, learning_rate="constant", eta0=1e-03, loss="log_loss", penalty="l2", fit_intercept=True, 
+        max_iter=1, random_state=4649
     )
     job.to(JoblibModelParamPersistor(initial_params=initial_params), "server", id=persistor_id)
     job.to(FullModelShareableGenerator(), "server", id=shareable_generator_id)
@@ -61,5 +62,5 @@ if __name__ == "__main__":
         runner = ScriptRunner(script=train_script, script_args=script_args, framework=FrameworkType.RAW)
         job.to(runner, f"site-{i + 1}")
 
-    job.export_job(os.path.join(output_folder, "jobs"))
-    job.simulator_run(output_folder, gpu="0")
+    # job.export_job(os.path.join(workspace, "jobs"))
+    job.simulator_run(workspace, gpu="0")

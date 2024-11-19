@@ -19,13 +19,12 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import SGDClassifier
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 # (1) import nvflare client API
 from nvflare import client as flare
-
 
 def to_dataset_tuple(data: dict):
     dataset_tuples = {}
@@ -125,9 +124,9 @@ def main():
                 fit_intercept=fit_intercept,
                 learning_rate=global_params["learning_rate"],
                 eta0=global_params["eta0"],
-                max_iter=1,
+                max_iter=global_params["max_iter"],
                 warm_start=True,
-                random_state=random_state,
+                random_state=global_params["random_state"],
             )
             n_classes = global_params["n_classes"]
             model.classes_ = np.array(list(range(n_classes)))
@@ -143,18 +142,20 @@ def main():
                 model.intercept_ = global_params["intercept"]
 
         # (6) evaluate global model first.
-        global_auc, global_report = evaluate_model(x_test, model, y_test)
+        global_auc, global_report, global_acc = evaluate_model(x_test, model, y_test)
         # Print the results
-        print(f"{site_name}: global model AUC: {global_auc:.4f}")
+        print(f"{site_name}: global model AUC: {global_auc:.4f}, accuracy: {global_acc:.4f}")
         # print("{site_name}: global model Classification Report:\n", global_report)
+        # print(f"{site_name}: global model coefficients: {model.coef_}")
 
         # Train the model on the training set
         model.fit(x_train, y_train)
-        local_auc, local_report = evaluate_model(x_test, model, y_test)
+        local_auc, local_report, local_acc = evaluate_model(x_test, model, y_test)
 
         # Print the results
-        print(f"{site_name}: local model AUC: {local_auc:.4f}")
+        print(f"{site_name}: local model AUC: {local_auc:.4f}, accuracy: {local_acc:.4f}")
         # print("{site_name}: local model Classification Report:\n", local_report)
+        # print(f"{site_name}: local model coefficients: {model.coef_}")
 
         # (7) construct trained FL model
         params = {"coef": model.coef_, "intercept": model.intercept_}
@@ -167,12 +168,14 @@ def main():
 
 def evaluate_model(x_test, model, y_test):
     # Make predictions on the testing set
+    y_prob = model.predict_proba(x_test)[:, 1]
     y_pred = model.predict(x_test)
 
     # Evaluate the model
-    auc = roc_auc_score(y_test, y_pred)
+    auc = roc_auc_score(y_test, y_prob)
     report = classification_report(y_test, y_pred)
-    return auc, report
+    acc = accuracy_score(y_test, y_pred)
+    return auc, report, acc
 
 
 def define_args_parser():
