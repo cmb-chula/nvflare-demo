@@ -24,7 +24,7 @@ import os
 if __name__ == "__main__":
     n_clients = 4 ## ADJUST NUMBER OF CLIENT TO MATCH THE DATASET
     num_rounds = 10 ## ADJUST NUMBER OF TRAINING ROUNDS
-    train_script = "nvflare-demo/sklearn-linear/code/sgd_fl.py"
+    train_script = "nvflare-demo/sklearn-linear/sgd_fl.py"
     output_folder = "nvflare-demo/sklearn-linear/output" ## OUTPUT LOCATION
     script_args = "--data_root_dir nvflare_demo/crc-data" ## PATH TO DATA FOLDER
 
